@@ -83,3 +83,15 @@ pub fn process_csv_file(input_path: &Path) -> Result<DataFrame, PolarsError> {
 
     Ok(cleaned_dataframe)
 }
+
+/* To-do:
+
+1. Add error handling for CSV writing
+2. Add logging for debugging purposes
+3. Add unit tests for the process_csv_file function
+4. Add support for different CSV formats (e.g., TSV)
+5. Add support for filtering rows based on conditions
+6. Use Clap for command-line argument parsing
+7. Optimize performance for large CSV files
+
+*/
