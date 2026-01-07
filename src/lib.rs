@@ -14,8 +14,8 @@ pub const COL_BW_COPIER: &str = "Black & WhiteTotal(Copier/Document Server)";
 pub const COL_BW_LARGE: &str = "Black & White(Large size)(Printer)";
 
 // File paths
-pub const INPUT_CSV_FILE: &str = "./data/IPA Busia Printer_usercounter_20251203.csv";
-pub const OUTPUT_CSV_FILE: &str = "./data/Busia_Printer_Analyzed_Output.csv";
+pub const INPUT_CSV_FILE: &str = "./data/IPAK_NRB_PROGRAMS_HR_PRINTER_usercounter_20260107.csv";
+pub const OUTPUT_CSV_FILE: &str = "./data/Nairobi_HR_Printer_Analyzed_Output.csv";
 
 /// Helper: return the list of columns we care about
 fn selected_columns() -> [&'static str; 5] {
