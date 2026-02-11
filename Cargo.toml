@@ -1,7 +1,8 @@
 [package]
 name    = "csv_processing_automation"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 polars = { version = "0.32.1", features = ["lazy"] }
+clap = { version = "4.4", features = ["derive"] }

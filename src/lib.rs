@@ -1,6 +1,6 @@
 use polars::prelude::*;
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // /// ===============================
 // /// Constants for CSV processing
@@ -12,10 +12,6 @@ pub const COL_TOTAL_PRINTS: &str = "Total Prints";
 pub const COL_BW_PRINTER: &str = "Black & WhiteTotal(Printer)";
 pub const COL_BW_COPIER: &str = "Black & WhiteTotal(Copier/Document Server)";
 pub const COL_BW_LARGE: &str = "Black & White(Large size)(Printer)";
-
-// File paths
-pub const INPUT_CSV_FILE: &str = "./data/IPAK_NRB_PROGRAMS_HR_PRINTER_usercounter_20260107.csv";
-pub const OUTPUT_CSV_FILE: &str = "./data/Nairobi_HR_Printer_Analyzed_Output.csv";
 
 /// Helper: return the list of columns we care about
 fn selected_columns() -> [&'static str; 5] {
@@ -29,7 +25,7 @@ fn selected_columns() -> [&'static str; 5] {
 }
 
 /// Process a CSV file into a cleaned DataFrame
-pub fn process_csv_file(input_path: &Path) -> Result<DataFrame, PolarsError> {
+pub fn process_csv_file(input_path: &Path, output_path: &Path) -> Result<DataFrame, PolarsError> {
     // Ensure input file exists
     if !input_path.exists() {
         return Err(PolarsError::ComputeError(
@@ -56,7 +52,7 @@ pub fn process_csv_file(input_path: &Path) -> Result<DataFrame, PolarsError> {
     let selected_dataframe = dataframe.select(selected_columns())?;
 
     // Clean "Name" column → remove square brackets
-    let cleaned_dataframe = selected_dataframe
+    let mut cleaned_dataframe = selected_dataframe
         .lazy()
         .with_column(
             col(COL_NAME)
@@ -67,31 +63,59 @@ pub fn process_csv_file(input_path: &Path) -> Result<DataFrame, PolarsError> {
         .collect()?;
 
     // Create output file
-    let mut output_file = File::create(OUTPUT_CSV_FILE).map_err(|error| {
+    let output_file = File::create(output_path).map_err(|error| {
         PolarsError::ComputeError(
-            format!("Failed to create '{}': {}", OUTPUT_CSV_FILE, error).into(),
+            format!("Failed to create '{}': {}", output_path.display(), error).into(),
         )
     })?;
 
     // Write cleaned DataFrame to CSV
-    let mut cleaned_dataframe = cleaned_dataframe;
-    CsvWriter::new(&mut output_file)
+    CsvWriter::new(output_file)
         .has_header(true)
         .finish(&mut cleaned_dataframe)?;
 
-    println!("\n✅ Output file created at: {}", OUTPUT_CSV_FILE);
+    println!("\n✅ Output file created at: {}", output_path.display());
 
     Ok(cleaned_dataframe)
 }
 
-/* To-do:
+// /// ===============================
+// /// To-do (future improvements)
+// /// ===============================
+// /// 1. Add logging for debugging purposes
+// /// 2. Add support for different CSV formats (e.g., TSV)
+// /// 3. Add support for filtering rows based on conditions
+// /// 4. Optimize performance for very large CSV files
+// /// 5. Support batch processing of multiple files
 
-1. Add error handling for CSV writing
-2. Add logging for debugging purposes
-3. Add unit tests for the process_csv_file function
-4. Add support for different CSV formats (e.g., TSV)
-5. Add support for filtering rows based on conditions
-6. Use Clap for command-line argument parsing
-7. Optimize performance for large CSV files
+/// Generate output path from input path
+pub fn generate_output_path(input_path: &Path) -> PathBuf {
+    let file_name = input_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("output");
 
-*/
+    let output_dir = input_path.parent().unwrap_or(Path::new("./data"));
+
+    let new_name = format!("{}_Analyzed_Output.csv", file_name);
+    output_dir.join(new_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_output_path() {
+        let input = Path::new("./data/IPA Busia Printer_usercounter_20260203.csv");
+        let output = generate_output_path(input);
+        assert!(output.to_string_lossy().contains("Analyzed_Output"));
+    }
+
+    #[test]
+    fn test_generate_output_path_different_input() {
+        let input = Path::new("./data/Test_usercounter_20251203.csv");
+        let output = generate_output_path(input);
+        assert!(output.to_string_lossy().contains("Analyzed_Output"));
+    }
+}
