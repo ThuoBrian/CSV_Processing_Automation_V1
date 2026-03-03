@@ -7,18 +7,20 @@ use std::path::PathBuf;
 #[command(about = "A tool for processing printer/user-counter CSV data", long_about = None)]
 struct Args {
     /// Input CSV file path
-    #[arg(short, long)]
+    #[arg(short = 'i', long)]
     input: PathBuf,
 
     /// Output CSV file path (optional, defaults to auto-generated based on input)
-    #[arg(short, long)]
+    #[arg(short = 'o', long)]
     output: Option<PathBuf>,
 }
 
 fn main() {
     let args = Args::parse();
 
-    let output_path = args.output.unwrap_or_else(|| generate_output_path(&args.input));
+    let output_path = args
+        .output
+        .unwrap_or_else(|| generate_output_path(&args.input));
 
     match process_csv_file(&args.input, &output_path) {
         Ok(df) => {
