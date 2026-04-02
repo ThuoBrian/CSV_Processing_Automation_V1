@@ -20,11 +20,7 @@ struct Args {
     interactive: bool,
 }
 
-fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
-    println!("\n╔════════════════════════════════════════════╗");
-    println!("║   CSV Processing Automation - Interactive  ║");
-    println!("╚════════════════════════════════════════════╝\n");
-
+fn process_single_file() -> Result<(), Box<dyn std::error::Error>> {
     // Get input file path
     let default_input = "./data/input.csv".to_string();
     let input_path_str = Text::new("Enter input CSV file path:")
@@ -101,6 +97,32 @@ fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("❌ Failed to analyze CSV: {:?}", e);
             return Err(Box::new(e));
         }
+    }
+
+    Ok(())
+}
+
+fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
+    println!("\n╔════════════════════════════════════════════╗");
+    println!("║   CSV Processing Automation - Interactive  ║");
+    println!("╚════════════════════════════════════════════╝\n");
+
+    loop {
+        if let Err(e) = process_single_file() {
+            eprintln!("Error: {}", e);
+        }
+
+        // Ask if user wants to process another file
+        let another = Confirm::new("\nProcess another CSV file?")
+            .with_default(true)
+            .prompt()?;
+
+        if !another {
+            println!("\n👋 Thanks for using CSV Processing Automation!");
+            break;
+        }
+
+        println!("\n{}", "─".repeat(40));
     }
 
     Ok(())
