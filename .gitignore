@@ -1,1 +1,37 @@
+# Rust build artifacts
+# Rust build artifacts
 /target
+**/target/
+
+# Cargo lock for libraries (keep for binaries)
+# Cargo.lock
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Rust Analyzer
+.rust-analyzer/
+
+# Environment variables
+.env
+.env.*
+
+# Claude Code
+.claude/
+
+# Data files
+data/
+*.csv
+
+# Build output
+**/*.rs.bk
+
+# Profiling
+*.profraw
+*.profdata
+coverage/
