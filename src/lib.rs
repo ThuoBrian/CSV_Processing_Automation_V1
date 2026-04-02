@@ -89,13 +89,18 @@ pub fn process_csv_file(input_path: &Path, output_path: &Path) -> Result<DataFra
 // /// 5. Support batch processing of multiple files
 
 /// Generate output path from input path
+/// Outputs to ./output/ directory (creates it if needed)
 pub fn generate_output_path(input_path: &Path) -> PathBuf {
     let file_name = input_path
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("output");
 
-    let output_dir = input_path.parent().unwrap_or(Path::new("./data"));
+    // Use ./output/ directory in current working dir
+    let output_dir = Path::new("./output");
+
+    // Create output directory if it doesn't exist
+    std::fs::create_dir_all(output_dir).ok();
 
     let new_name = format!("{}_Analyzed_Output.csv", file_name);
     output_dir.join(new_name)
