@@ -27,6 +27,7 @@
 # Data files
 data/
 *.csv
+output/
 
 # Build output
 **/*.rs.bk

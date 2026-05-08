@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_generate_output_path() {
-        let input = Path::new("./data/IPA Busia Printer_usercounter_20260203.csv");
+        let input = Path::new("./data/IPAK_NRB_PROGRAMS_HR_PRINTER_usercounter_20260507.csv");
         let output = generate_output_path(input);
         assert!(output.to_string_lossy().contains("Analyzed_Output"));
     }
