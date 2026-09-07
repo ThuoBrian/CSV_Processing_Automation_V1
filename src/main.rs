@@ -45,6 +45,17 @@ fn list_files_with_extension(dir: &str, extension: &str) -> Vec<PathBuf> {
     files
 }
 
+/// Ask whether to open `dir` in the OS file explorer, and do so if confirmed.
+fn maybe_open_dir(dir: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+    let open_dir = Confirm::new("Open output directory?")
+        .with_default(false)
+        .prompt()?;
+    if open_dir {
+        open::that(dir).ok();
+    }
+    Ok(())
+}
+
 /// Prompt the user to pick a file from `dir` with the given `extension`.
 fn select_file(dir: &str, extension: &str, prompt: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
     let files = list_files_with_extension(dir, extension);
@@ -96,15 +107,13 @@ fn process_cmr_matching() -> Result<(), Box<dyn std::error::Error>> {
                 "xlsx",
                 "Select the printer CODES lookup workbook (maps account IDs -> project names):",
             )?;
-            let mut codes_workbook =
-                load_workbook(&codes_path).map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+            let mut codes_workbook = load_workbook(&codes_path)?;
             let codes_sheets = list_sheets(&codes_workbook);
             if codes_sheets.is_empty() {
                 return Err("No sheets found in the codes workbook".into());
             }
             let codes_sheet_name = Select::new("Select the codes sheet:", codes_sheets).prompt()?;
-            let codes_sheet = parse_codes_sheet(&mut codes_workbook, &codes_sheet_name)
-                .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+            let codes_sheet = parse_codes_sheet(&mut codes_workbook, &codes_sheet_name)?;
 
             if codes_sheet.headers.is_empty() {
                 return Err(format!("Sheet '{}' has no header row", codes_sheet_name).into());
@@ -141,14 +150,13 @@ fn process_cmr_matching() -> Result<(), Box<dyn std::error::Error>> {
         "xlsx",
         "Select the source_of_truth workbook:",
     )?;
-    let mut workbook = load_workbook(&workbook_path).map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+    let mut workbook = load_workbook(&workbook_path)?;
     let sheets = list_sheets(&workbook);
     if sheets.is_empty() {
         return Err("No sheets found in workbook".into());
     }
     let sheet_name = Select::new("Select the month sheet:", sheets).prompt()?;
-    let sheet_data =
-        parse_sheet(&mut workbook, &sheet_name).map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+    let sheet_data = parse_sheet(&mut workbook, &sheet_name)?;
 
     if sheet_data.blocks.is_empty() {
         return Err(format!("No CMR blocks found in sheet '{}'", sheet_name).into());
@@ -295,10 +303,8 @@ fn process_cmr_matching() -> Result<(), Box<dyn std::error::Error>> {
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("output");
-    let paste_ready_path = write_paste_ready_report(&project_rows, stem, &block.name)
-        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
-    let review_path = write_review_report(&rows, stem, &block.name)
-        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+    let paste_ready_path = write_paste_ready_report(&project_rows, stem, &block.name)?;
+    let review_path = write_review_report(&rows, stem, &block.name)?;
 
     println!(
         "\n✅ Paste-ready CMR report (workbook order): {}",
@@ -310,13 +316,8 @@ fn process_cmr_matching() -> Result<(), Box<dyn std::error::Error>> {
         auto_matched, confirmed_matched, skipped
     );
 
-    let open_dir = Confirm::new("Open output directory?")
-        .with_default(false)
-        .prompt()?;
-    if open_dir {
-        if let Some(dir) = paste_ready_path.parent() {
-            open::that(dir).ok();
-        }
+    if let Some(dir) = paste_ready_path.parent() {
+        maybe_open_dir(dir)?;
     }
 
     Ok(())
@@ -385,14 +386,8 @@ fn process_single_file() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             // Ask to open output directory
-            let open_dir = Confirm::new("Open output directory?")
-                .with_default(false)
-                .prompt()?;
-
-            if open_dir {
-                if let Some(dir) = output_path.parent() {
-                    open::that(dir).ok();
-                }
+            if let Some(dir) = output_path.parent() {
+                maybe_open_dir(dir)?;
             }
         }
         Err(e) => {

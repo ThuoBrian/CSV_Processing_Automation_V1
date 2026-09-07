@@ -9,13 +9,12 @@ const HEADER_ROW: usize = 4;
 /// Data rows start right after the header row.
 const DATA_START_ROW: usize = 5;
 
-/// A single office/printer block (e.g. "NAIROBI - PROGRAMS") and the
-/// column indices (0-indexed) of its CMR columns within the sheet.
+/// A single office/printer block (e.g. "NAIROBI - PROGRAMS") found in the
+/// sheet's header row. Which columns feed CMR(print)/CMR(copy) is picked
+/// interactively by the caller, so this only carries the block's name.
 #[derive(Debug, Clone)]
 pub struct Block {
     pub name: String,
-    pub cmr_print_col: usize,
-    pub cmr_copy_col: usize,
 }
 
 /// One project row from the source_of_truth sheet.
@@ -110,20 +109,17 @@ fn find_blocks(block_label_row: &[String], header_row: &[String]) -> Vec<Block> 
     }
 
     let mut blocks: Vec<Block> = Vec::new();
-    let mut cmr_print_col: Option<usize> = None;
+    let mut saw_print_col = false;
     for (i, header) in header_row.iter().enumerate() {
         let h = header.trim().to_ascii_lowercase();
         if h.contains("cmr") && h.contains("print") {
-            cmr_print_col = Some(i);
+            saw_print_col = true;
         } else if h.contains("cmr") && h.contains("copy") {
-            if let Some(print_col) = cmr_print_col.take() {
+            if saw_print_col {
+                saw_print_col = false;
                 let name = labels.get(i).cloned().unwrap_or_default();
                 if !name.is_empty() {
-                    blocks.push(Block {
-                        name,
-                        cmr_print_col: print_col,
-                        cmr_copy_col: i,
-                    });
+                    blocks.push(Block { name });
                 }
             }
         }
