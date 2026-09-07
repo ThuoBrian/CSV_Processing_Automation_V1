@@ -28,6 +28,7 @@
 data/
 *.csv
 output/
+source_of_truth/
 
 # Build output
 **/*.rs.bk

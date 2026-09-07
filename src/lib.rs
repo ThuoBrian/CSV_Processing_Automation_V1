@@ -2,6 +2,11 @@ use polars::prelude::*;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
+pub mod matcher;
+pub mod printer_codes;
+pub mod report;
+pub mod source_of_truth;
+
 // /// ===============================
 // /// Constants for CSV processing
 // /// ===============================
@@ -77,6 +82,23 @@ pub fn process_csv_file(input_path: &Path, output_path: &Path) -> Result<DataFra
     println!("\n✅ Output file created at: {}", output_path.display());
 
     Ok(cleaned_dataframe)
+}
+
+/// Read a printer usage CSV in full (all columns, no selection/cleaning).
+/// Used by the CMR-matching flow, which needs to let the user pick which
+/// columns feed CMR(print)/CMR(copy) at run time.
+pub fn read_full_csv(input_path: &Path) -> Result<DataFrame, PolarsError> {
+    if !input_path.exists() {
+        return Err(PolarsError::ComputeError(
+            format!("Input file does not exist: {:?}", input_path).into(),
+        ));
+    }
+
+    let input_file = File::open(input_path).map_err(|error| {
+        PolarsError::ComputeError(format!("Failed to open '{:?}': {}", input_path, error).into())
+    })?;
+
+    CsvReader::new(input_file).has_header(true).finish()
 }
 
 // /// ===============================
