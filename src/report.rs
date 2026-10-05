@@ -51,24 +51,32 @@ fn csv_escape(value: &str) -> String {
     }
 }
 
-fn output_path(input_stem: &str, block: &str, suffix: &str) -> Result<PathBuf, String> {
-    let output_dir = Path::new("./output");
-    std::fs::create_dir_all(output_dir)
-        .map_err(|e| format!("Failed to create output dir: {}", e))?;
+fn output_path(
+    base_dir: &Path,
+    input_stem: &str,
+    block: &str,
+    suffix: &str,
+) -> Result<PathBuf, String> {
+    std::fs::create_dir_all(base_dir).map_err(|e| format!("Failed to create output dir: {}", e))?;
     let safe_block = block.replace(|c: char| !c.is_alphanumeric(), "_");
-    Ok(output_dir.join(format!("{}_CMR_Report_{}{}.csv", input_stem, safe_block, suffix)))
+    Ok(base_dir.join(format!(
+        "{}_CMR_Report_{}{}.csv",
+        input_stem, safe_block, suffix
+    )))
 }
 
 /// Write the paste-ready CMR report: one row per source_of_truth project,
 /// in the same order as the workbook sheet, with the exact `Project Name`
 /// text so the CMR(print)/CMR(copy) columns can be copy-pasted straight
 /// into the workbook without re-sorting or re-matching by hand.
+/// Writes into `base_dir` (created if it doesn't exist yet).
 pub fn write_paste_ready_report(
     rows: &[ProjectCmr],
+    base_dir: &Path,
     input_stem: &str,
     block: &str,
 ) -> Result<PathBuf, String> {
-    let path = output_path(input_stem, block, "")?;
+    let path = output_path(base_dir, input_stem, block, "")?;
     let mut sorted: Vec<&ProjectCmr> = rows.iter().collect();
     sorted.sort_by_key(|r| r.row_idx);
 
@@ -93,12 +101,14 @@ pub fn write_paste_ready_report(
 /// Write the audit/review report: one row per printer-CSV reading, showing
 /// what it matched to (or that it didn't), for spot-checking before you
 /// trust the paste-ready report.
+/// Writes into `base_dir` (created if it doesn't exist yet).
 pub fn write_review_report(
     rows: &[MatchedRow],
+    base_dir: &Path,
     input_stem: &str,
     block: &str,
 ) -> Result<PathBuf, String> {
-    let path = output_path(input_stem, block, "_Review")?;
+    let path = output_path(base_dir, input_stem, block, "_Review")?;
     let mut file =
         File::create(&path).map_err(|e| format!("Failed to create '{}': {}", path.display(), e))?;
 

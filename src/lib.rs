@@ -79,8 +79,6 @@ pub fn process_csv_file(input_path: &Path, output_path: &Path) -> Result<DataFra
         .has_header(true)
         .finish(&mut cleaned_dataframe)?;
 
-    println!("\n✅ Output file created at: {}", output_path.display());
-
     Ok(cleaned_dataframe)
 }
 
@@ -110,22 +108,26 @@ pub fn read_full_csv(input_path: &Path) -> Result<DataFrame, PolarsError> {
 // /// 4. Optimize performance for very large CSV files
 // /// 5. Support batch processing of multiple files
 
-/// Generate output path from input path
-/// Outputs to ./output/ directory (creates it if needed)
-pub fn generate_output_path(input_path: &Path) -> PathBuf {
+/// Build the output file name for a given input path (e.g.
+/// `foo.csv` -> `foo_Analyzed_Output.csv`). Pure — does no I/O, so callers
+/// can join it onto any output directory they choose.
+pub fn output_file_name(input_path: &Path) -> String {
     let file_name = input_path
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("output");
+    format!("{file_name}_Analyzed_Output.csv")
+}
 
-    // Use ./output/ directory in current working dir
+/// Generate output path from input path
+/// Outputs to ./output/ directory (creates it if needed)
+pub fn generate_output_path(input_path: &Path) -> PathBuf {
     let output_dir = Path::new("./output");
 
     // Create output directory if it doesn't exist
     std::fs::create_dir_all(output_dir).ok();
 
-    let new_name = format!("{}_Analyzed_Output.csv", file_name);
-    output_dir.join(new_name)
+    output_dir.join(output_file_name(input_path))
 }
 
 #[cfg(test)]
